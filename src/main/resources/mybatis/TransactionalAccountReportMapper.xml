@@ -1,0 +1,32 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+    <mapper namespace='za.co.assignment.bankingSystem.mapper.TransactionalAccountReportMapper'>
+
+    <!-- Mapping TransactionalAccountReportMap -->
+    <resultMap type='za.co.assignment.bankingSystem.domain.TransactionalAccountReport' id='TransactionalAccountReportMap'>
+        <result property='clientId' column='CLIENT_ID'/>
+        <result property='surname' column='SURNAME'/>
+        <result property='clientAccountNumber' column='CLIENT_ACCOUNT_NUMBER'/>
+        <result property='description' column='DESCRIPTION'/>
+        <result property='displayBalance' column='DISPLAY_BALANCE'/>
+    </resultMap>
+    <!-- ************************************************************************************* -->
+
+    <select id='getTransactionalAccountReportForAllClients' resultMap='TransactionalAccountReportMap'>
+      SELECT c.CLIENT_ID, c.SURNAME, a.CLIENT_ACCOUNT_NUMBER, t.DESCRIPTION, a.DISPLAY_BALANCE
+      FROM CLIENT c
+      JOIN CLIENT_ACCOUNT a ON a.CLIENT_ID = c.CLIENT_ID
+      JOIN ACCOUNT_TYPE t ON t.ACCOUNT_TYPE_CODE = a.ACCOUNT_TYPE_CODE
+      JOIN (
+      SELECT c1.CLIENT_ID, MAX(a1.DISPLAY_BALANCE) AS DISPLAY_BALANCE
+      FROM CLIENT c1
+      JOIN CLIENT_ACCOUNT a1 ON a1.CLIENT_ID = c1.CLIENT_ID
+      WHERE a1.ACCOUNT_TYPE_CODE IN ('CCRD', 'CHQ', 'SVGS')
+      GROUP BY c1.CLIENT_ID
+      ) m ON m.CLIENT_ID = c.CLIENT_ID AND m.DISPLAY_BALANCE = a.DISPLAY_BALANCE
+      GROUP BY c.CLIENT_ID, c.SURNAME, a.CLIENT_ACCOUNT_NUMBER, t.DESCRIPTION, a.DISPLAY_BALANCE
+    </select>
+
+</mapper>

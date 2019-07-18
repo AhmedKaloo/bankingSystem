@@ -1,0 +1,78 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+   <mapper namespace='za.co.assignment.bankingSystem.mapper.CashWithdrawalMapper'>
+
+    <!-- Mapping TransactionalAccountBalanceMap -->
+    <resultMap type='za.co.assignment.bankingSystem.domain.TransactionalAccountBalance' id='TransactionalAccountBalanceMap'>
+        <result property='accountTypeCode' column='ACCOUNT_TYPE_CODE'/>
+        <result property='accountBalance' column='ACCOUNT_BALANCE'/>
+        <result property='accountNumber' column='CLIENT_ACCOUNT_NUMBER'/>
+    </resultMap>
+    <!-- ************************************************************************************* -->
+
+    <select id='getAccountBalance' parameterType='String' resultMap='TransactionalAccountBalanceMap'>
+        SELECT t.ACCOUNT_TYPE_CODE AS ACCOUNT_TYPE_CODE, a.DISPLAY_BALANCE AS ACCOUNT_BALANCE
+        FROM CLIENT_ACCOUNT a
+        JOIN ACCOUNT_TYPE t ON t.ACCOUNT_TYPE_CODE = a.ACCOUNT_TYPE_CODE
+        WHERE t.TRANSACTIONAL = 1
+        AND a.CLIENT_ACCOUNT_NUMBER = #{accountNo}
+    </select>
+
+    <update id = "updateAccountBalance" parameterType="za.co.assignment.bankingSystem.domain.TransactionalAccountBalance">
+        UPDATE CLIENT_ACCOUNT
+        SET DISPLAY_BALANCE = #{accountBalance}
+        WHERE CLIENT_ACCOUNT_NUMBER = #{accountNumber}
+    </update>
+
+    <!-- Mapping CreditAccountLimitMap -->
+    <resultMap type='za.co.assignment.bankingSystem.domain.CreditAccountLimit' id='CreditAccountLimitMap'>
+        <result property='accountLimit' column='ACCOUNT_LIMIT'/>
+        <result property='accountNumber' column='CLIENT_ACCOUNT_NUMBER'/>
+    </resultMap>
+
+    <select id='getCreditAccountLimit' parameterType='String' resultMap='CreditAccountLimitMap'>
+        SELECT ACCOUNT_LIMIT
+        FROM CREDIT_CARD_LIMIT
+        WHERE CLIENT_ACCOUNT_NUMBER = #{accountNo}
+    </select>
+
+    <!-- Mapping ATMBalanceMap -->
+    <resultMap type='za.co.assignment.bankingSystem.domain.ATMBalance' id='ATMBalanceMap'>
+        <result property='atmId' column='ATM_ID'/>
+        <result property='atmBalance' column='ATM_BALANCE'/>
+        <result property='count' column='COUNT'/>
+    </resultMap>
+    <!-- ************************************************************************************* -->
+
+    <select id='getATMBalance' parameterType='int' resultMap='ATMBalanceMap'>
+      SELECT ATM_ID, SUM(TOTAL) AS ATM_BALANCE
+      FROM
+      (SELECT a.ATM_ID, a.COUNT * d.VALUE AS TOTAL
+      FROM ATM_ALLOCATION a
+      JOIN DENOMINATION d ON d.DENOMINATION_ID = a.DENOMINATION_ID
+      WHERE d.DENOMINATION_TYPE_CODE = 'N'
+      AND a.ATM_ID = #{atmId})
+      GROUP BY ATM_ID
+    </select>
+
+    <select id='getAvailableNotesFromATM' parameterType='int' resultMap='ATMBalanceMap'>
+        SELECT d.VALUE, a.COUNT
+        FROM ATM_ALLOCATION a
+        JOIN DENOMINATION d ON d.DENOMINATION_ID = a.DENOMINATION_ID
+        WHERE d.DENOMINATION_TYPE_CODE = 'N'
+        AND a.ATM_ID = #{atmId}
+        GROUP BY a.ATM_ID, d.VALUE
+        ORDER BY d.VALUE DESC
+    </select>
+
+     <update id = "updateATMBalance" parameterType="za.co.assignment.bankingSystem.domain.ATMBalance">
+        UPDATE ATM_ALLOCATION
+        SET COUNT = COUNT-#{count}
+        WHERE ATM_ID = #{atmId}
+        AND DENOMINATION_ID IN
+        (SELECT DENOMINATION_ID FROM DENOMINATION WHERE VALUE = #{value})
+    </update>
+
+</mapper>

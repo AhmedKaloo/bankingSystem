@@ -1,0 +1,24 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+    <mapper namespace='za.co.assignment.bankingSystem.mapper.TransactionalAccountBalanceMapper'>
+
+    <!-- Mapping TransactionalBalanceMap -->
+    <resultMap type='za.co.assignment.bankingSystem.domain.TransactionalAccountBalance' id='TransactionalAccountBalanceMap'>
+        <result property='accountNumber' column='ACCOUNT_NUMBER'/>
+        <result property='accountType' column='ACCOUNT_TYPE'/>
+        <result property='accountBalance' column='ACCOUNT_BALANCE'/>
+    </resultMap>
+    <!-- ************************************************************************************* -->
+
+    <select id='getTransactionalAccountBalanceByClientId' parameterType='int' resultMap='TransactionalAccountBalanceMap'>
+      SELECT a.CLIENT_ACCOUNT_NUMBER AS ACCOUNT_NUMBER, t.DESCRIPTION AS ACCOUNT_TYPE, a.DISPLAY_BALANCE AS ACCOUNT_BALANCE
+      FROM CLIENT_ACCOUNT a
+      JOIN ACCOUNT_TYPE t ON t.ACCOUNT_TYPE_CODE= a.ACCOUNT_TYPE_CODE
+      WHERE t.TRANSACTIONAL = 1
+      AND a.CLIENT_ID = #{clientId}
+      ORDER BY a.DISPLAY_BALANCE DESC
+    </select>
+
+</mapper>

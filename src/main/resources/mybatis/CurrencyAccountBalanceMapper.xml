@@ -1,0 +1,31 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+    <mapper namespace='za.co.assignment.bankingSystem.mapper.CurrencyAccountBalanceMapper'>
+
+    <!-- Mapping CurrencyBalanceMap -->
+    <resultMap type='za.co.assignment.bankingSystem.domain.CurrencyAccountBalance' id='CurrencyAccountBalanceMap'>
+        <result property='clientAccountNumber' column='ACCOUNT_NUMBER'/>
+        <result property='currencyCode' column='CURRENCY'/>
+        <result property='displayBalance' column='CURRENCY_BALANCE'/>
+        <result property='rate' column='CONVERSION_RATE'/>
+        <result property='randBalance' column='ZAR_AMOUNT'/>
+    </resultMap>
+    <!-- ************************************************************************************* -->
+
+    <select id='getCurrencyAccountBalanceByClientId' parameterType='int' resultMap='CurrencyAccountBalanceMap'>
+      SELECT a.CLIENT_ACCOUNT_NUMBER AS ACCOUNT_NUMBER, a.CURRENCY_CODE AS CURRENCY, a.DISPLAY_BALANCE AS CURRENCY_BALANCE, r.RATE AS CONVERSION_RATE,
+      CASE r.CONVERSION_INDICATOR
+        WHEN '/' THEN a.DISPLAY_BALANCE / r.RATE
+        ELSE a.DISPLAY_BALANCE * r.RATE
+      END ZAR_AMOUNT
+      FROM CLIENT c
+      JOIN CLIENT_ACCOUNT a ON a.CLIENT_ID = c.CLIENT_ID
+      JOIN CURRENCY_CONVERSION_RATE r ON r.CURRENCY_CODE = a.CURRENCY_CODE
+      WHERE a.ACCOUNT_TYPE_CODE IN ('CFCA')
+      AND a.CLIENT_ID = #{clientId}
+      ORDER BY ZAR_AMOUNT DESC;
+    </select>
+
+</mapper>

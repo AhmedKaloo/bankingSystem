@@ -1,0 +1,52 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+    <mapper namespace='za.co.assignment.bankingSystem.mapper.AggregateFinancialPositionReportMapper'>
+
+    <!-- Mapping AggregateFinancialPositionMap -->
+    <resultMap type='za.co.assignment.bankingSystem.domain.AggregateFinancialPositionReport' id='AggregateFinancialPositionReportMap'>
+        <result property='client' column='CLIENT'/>
+        <result property='transactionalBalance' column='TRANSACTIONAL_BALANCE'/>
+        <result property='loanBalance' column='LOAN_BALANCE'/>
+        <result property='netPosition' column='NET_POSITION'/>
+    </resultMap>
+    <!-- ************************************************************************************* -->
+
+    <select id='getAggregateFinancialPositionReportForAllClients' resultMap='AggregateFinancialPositionReportMap'>
+    SELECT (c.TITLE || ' ' || c.NAME || ' ' || c.SURNAME) AS CLIENT, t.TRANSACTIONAL_BALANCE, l.LOAN_BALANCE, (n.CURRENCY_BALANCE_ZAR + t.TRANSACTIONAL_BALANCE + l.LOAN_BALANCE) AS NET_POSITION
+    FROM CLIENT c
+
+    JOIN (
+    SELECT c1.CLIENT_ID, AVG(a1.DISPLAY_BALANCE) AS TRANSACTIONAL_BALANCE
+    FROM CLIENT c1
+    JOIN CLIENT_ACCOUNT a1 ON a1.CLIENT_ID = c1.CLIENT_ID
+    WHERE a1.ACCOUNT_TYPE_CODE IN ('CCRD', 'CHQ', 'SVGS')
+    GROUP BY c1.CLIENT_ID
+    ) t ON t.CLIENT_ID = c.CLIENT_ID
+
+    JOIN (
+    SELECT c1.CLIENT_ID, AVG(a1.DISPLAY_BALANCE) AS LOAN_BALANCE
+    FROM CLIENT c1
+    JOIN CLIENT_ACCOUNT a1 ON a1.CLIENT_ID = c1.CLIENT_ID
+    WHERE a1.ACCOUNT_TYPE_CODE IN ('HLOAN', 'PLOAN')
+    GROUP BY c1.CLIENT_ID
+    ) l ON l.CLIENT_ID = c.CLIENT_ID
+
+    JOIN (
+    SELECT CLIENT_ID, SUM(ZAR_AMOUNT) AS CURRENCY_BALANCE_ZAR
+    FROM
+    (SELECT c.CLIENT_ID,
+    CASE CONVERSION_INDICATOR
+    WHEN '/' THEN a.DISPLAY_BALANCE / r.RATE
+    ELSE a.DISPLAY_BALANCE * r.RATE END ZAR_AMOUNT
+    FROM CLIENT c
+    JOIN CLIENT_ACCOUNT a ON a.CLIENT_ID = c.CLIENT_ID
+    JOIN CURRENCY_CONVERSION_RATE r ON r.CURRENCY_CODE = a.CURRENCY_CODE
+    WHERE ACCOUNT_TYPE_CODE IN ('CFCA')
+    GROUP BY c.CLIENT_ID, CONVERSION_INDICATOR, a.DISPLAY_BALANCE)
+    GROUP BY CLIENT_ID
+    ) n ON n.CLIENT_ID = c.CLIENT_ID
+    </select>
+
+</mapper>
